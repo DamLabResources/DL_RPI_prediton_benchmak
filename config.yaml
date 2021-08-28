@@ -1,0 +1,276 @@
+##########################################################
+# RPI benchmark evaluation snakemake
+#
+# S
+#
+##########################################################
+
+seed: 255
+folds: 5
+which_gpu: 0
+
+######################################################
+# Hyperparameter opt configs
+######################################################
+
+NNI_PORT: 9999
+
+COMMON_NNI_EXPERIMENT_CONFIG_ARGS:
+    authorName: Bobby Link
+    maxExecDuration: 3h
+    trainingServicePlatform: local
+    useAnnotation: false
+    trialConcurrency: 1
+
+    assessor:
+        builtinAssessorName: Medianstop
+        classArgs:
+            optimize_mode: minimize
+    tuner:
+        builtinTunerName: TPE
+        classArgs:
+            optimize_mode: minimize
+    trial:
+        codeDir: ../Scripts/HyperparamOptScripts
+
+NNI_MODEL_PARAMS:
+#     ProtBERTDenseSAE:
+#         search_space:
+#             batchsize: [choice, [16,32,64,128]]
+#             hidden_layers: [choice, [[800,600,400,200], 
+#                                      [750,500,250], 
+#                                      [800,300,200],
+#                                      [500,250], 
+#                                      [500]]]
+#             dropout: [quniform, [0.2,0.6,0.1]]
+#             activation: [choice, [nn.LeakyReLU(), nn.ReLU(), nn.Sigmoid(), None]]
+            
+#         experiment_config:
+#             trialConcurrency: 7
+#             searchSpacePath: search_space/ProtBERTDenseSAE_search_space.json
+#             experimentName: ProtBERTDenseSAE
+#             trial:
+#                 command: python3 ProtBERTDenseSAE_opt.py
+                
+#     RNADenseSAE:
+#         search_space:
+#             batchsize: [choice, [16,32,64,128]]
+#             hidden_layers: [choice, [[800,600,400,200], 
+#                                      [750,500,250], 
+#                                      [800,300,200],
+#                                      [500,250], 
+#                                      [500]]]
+#             dropout: [quniform, [0.2,0.6,0.1]]
+#             activation: [choice, [nn.LeakyReLU(), nn.ReLU(), nn.Sigmoid(), None]]
+            
+#         experiment_config:
+#             trialConcurrency: 5
+#             searchSpacePath: search_space/RNADenseSAE_search_space.json
+#             experimentName: RNADenseSAE
+#             trial:
+#                 command: python3 RNA2VecDenseSAE_opt.py
+                
+    Main_ConvPool:
+        search_space:
+            # Main model/misc params
+            batchsize: [choice, [ 16, 32, 64, 128]]
+            dense_hidden_layers: [choice, [[5000,4000,3000,2000,1000,10]],
+                                           [4000,3000,2000,1000,10],
+                                           [3000,2000,1000,10],
+                                           [2000,1000,10],
+                                           [1000,10]]
+            p: [quniform, [0.2,0.8,0.1]]
+            act: [choice, [nn.LeakyReLU(), nn.ReLU(), nn.Sigmoid(), None]]
+            bn : [choice, [True,False]]
+            lin_first : [choice, [True,False]]
+            lr_max_arg: [choice, ['min','slice']]
+            # RNA params
+            rna_act_cls: [choice, [nn.LeakyReLU, nn.ReLU, nn.Sigmoid]]
+            rna_conv_channel_sizes: [choice, [[100,84,68,52,36,20]],
+                                              [100,80,60,40,20],
+                                              [100,73,46,20],
+                                              [100,60,20],
+                                              [100,20]]
+            rna_pooling_kernel_sizes: [choice, [2,3,4]]
+            rna_bn_1st: [choice, [True, False]]
+            rna_ks: [choice, [2,3,4,5]]
+            # rna_mixed_a: [quniform, [0.2, 0.8, 0.1]]
+            rna_pooling_type: [choice, [mixed, max, avg]]
+            #Prot params
+            prot_act_cls: [choice, [nn.LeakyReLU, nn.ReLU, nn.Sigmoid]]
+            prot_conv_channel_sizes: [choice, [[112,93,75,56,38,20]],
+                                               [112,89,66,43,20],
+                                               [112,81,50,20],
+                                               [112,66,20],
+                                               [112,20]]
+            prot_pooling_kernel_sizes: [choice, [2,3,4]]
+            prot_bn_1st: [choice, [True, False]]
+            prot_ks: [choice, [2,3,4,5]]
+            # prot_mixed_a: [quniform, [0.2, 0.8, 0.1]]
+            prot_pooling_type: [choice, [mixed, max, avg]]
+
+        experiment_config:
+            searchSpacePath: search_space/Main_ConvPool_search_space.json
+            experimentName: Main_ConvPool
+            trial:
+                command: python3 MainModel_opt.py
+
+#     Main_Attention:
+#         search_space:
+#             # Main model/misc params
+#             batchsize: [choice, [16, 32, 64, 128]]
+#             dense_hidden_layers: [choice, [[5000,4000,3000,2000,1000,10],
+#                                            [4000,3000,2000,1000,10],
+#                                            [3000,2000,1000,10],
+#                                            [2000,1000,10],
+#                                            [1000,10]]]
+#             p: [quniform, [0.2,0.8,0.1]]
+#             act: [choice, [nn.LeakyReLU(), nn.ReLU(), nn.Sigmoid(), None]]
+#             bn : [choice, [True,False]]
+#             lin_first : [choice, [True,False]]
+#             lr_max_arg: [choice, ['min','slice']]
+#             #RNA Params
+#             rna_layer_count: [choice, [2,4,8,16,32]]
+#             #Prot Params
+#             prot_layer_count: [choice, [2,4,8,16,32]]
+
+#         experiment_config:
+#             searchSpacePath: search_space/Main_Attention_search_space.json
+#             experimentName: Main_Attention
+#             trial:
+#                 command: python3 MainModel_opt.py
+                
+#     Main_Reccurent:
+#         search_space:
+#             # Main model/misc params
+#             batchsize: [choice, [16, 32, 64, 128]]
+#             dense_hidden_layers: [choice, [[5000,4000,3000,2000,1000,10],
+#                                            [4000,3000,2000,1000,10],
+#                                            [3000,2000,1000,10],
+#                                            [2000,1000,10],
+#                                            [1000,10]]]
+#             p: [quniform, [0.2,0.8,0.1]]
+#             act: [choice, [nn.LeakyReLU(), nn.ReLU(), nn.Sigmoid(), None]]
+#             bn : [choice, [True,False]]
+#             lin_first : [choice, [True,False]]
+#             lr_max_arg: [choice, ['min','slice']]
+#             #RNA Params
+#             rna_reccurent_type: [choice, [LSTM,GRU]]
+#             rna_bidirectional: [choice, [True,False]]
+#             rna_dropout: [quniform, [0.2,0.8,0.1]]
+#             rna_num_layers: [choice, [1,2,3,4,5]]
+#             rna_hidden_size: [choice, [8,16,32,64,128]]
+#             #Prot Params
+#             prot_reccurent_type: [choice, [LSTM,GRU]]
+#             prot_bidirectional: [choice, [True,False]]
+#             prot_dropout: [quniform, [0.2,0.8,0.1]]
+#             prot_num_layers: [choice, [1,2,3,4,5]]
+#             prot_hidden_size: [choice, [8,16,32,64,128]]
+
+#         experiment_config:
+#             searchSpacePath: search_space/Main_Reccurent_search_space.json
+#             experimentName: Main_Reccurent
+#             trial:
+#                 command: python3 MainModel_opt.py
+                
+#     Main_DenseSAE:
+#         search_space:
+#             # Main model/misc params
+#             batchsize: [choice, [16,32,64,128]]
+#             dense_hidden_layers: [choice, [[5000,4000,3000,2000,1000,10],
+#                                            [4000,3000,2000,1000,10],
+#                                            [3000,2000,1000,10],
+#                                            [2000,1000,10],
+#                                            [1000,10]]]
+#             p: [quniform, [0.2,0.8,0.1]]
+#             act: [choice, [nn.LeakyReLU(), nn.ReLU(), nn.Sigmoid(), None]]
+#             bn: [choice, [True,False]]
+#             lin_first: [choice, [True,False]]
+#             lr_max_arg: [choice, ['min','slice']]
+#             # RNA_params
+#             rna_sae_type: [choice, [Dense]]
+#             rna_sae_model_path: [choice, [/data/Chapter_3/Notebooks/rnavec_encoded_aggregated_u_t_swapped_rnas_DenseSAE.pt]]
+#             # Prot Params
+#             prot_sae_type: [choice, [Dense]]
+#             prot_sae_model_path: [choice, ['/data/Chapter_3/Notebooks/ProtBERT_encoded_110_swissprot_DenseSAE.pt']]
+
+#         experiment_config:
+#             searchSpacePath: search_space/Main_DenseSAE_search_space.json
+#             experimentName: Main_DenseSAE
+#             trial:
+#                 command: python3 MainModel_opt.py
+                
+#     Main_StackedRes:
+#         search_space:
+#             # Main model/misc params
+#             batchsize: [choice, [16,32,64,128]]
+#             dense_hidden_layers: [choice, [[5000,4000,3000,2000,1000,10],
+#                                            [4000,3000,2000,1000,10],
+#                                            [3000,2000,1000,10],
+#                                            [2000,1000,10],
+#                                            [1000,10]]]
+#             p: [quniform, [0.2,0.8,0.1]]
+#             act: [choice, [nn.LeakyReLU(), nn.ReLU(), nn.Sigmoid(), None]]
+#             bn: [choice, [True,False]]
+#             lin_first: [choice, [True,False]]
+#             lr_max_arg: [choice, ['min','slice']]
+#             #RNA Params
+#             rna_hidden_sizes: [choice, [[82,64,46,28,10],
+#                                         [78,55,33,10],
+#                                         [70,40,10],
+#                                         [55,10]]]
+#             rna_act_cls: [choice, [nn.LeakyReLU, nn.ReLU, nn.Sigmoid]]
+#             rna_bn_1st: [choice, [True,False]]
+#             #Prot Params
+#             prot_hidden_sizes: [choice, [[82,64,46,28,10],
+#                                         [78,55,33,10],
+#                                         [70,40,10],
+#                                         [55,10]]]
+#             prot_act_cls: [choice, [nn.LeakyReLU, nn.ReLU, nn.Sigmoid]]
+#             prot_bn_1st: [choice, [True,False]]
+
+#         experiment_config:
+#             searchSpacePath: search_space/Main_StackedRes_search_space.json
+#             experimentName: Main_StackedRes
+#             trial:
+#                 command: python3 MainModel_opt.py
+                
+#     Main_Dense:
+#         search_space:
+#             batchsize: [choice, [16, 32, 64, 128]]
+#             dense_hidden_layers: [choice, [[5000,4000,3000,2000,1000,10],
+#                                            [4000,3000,2000,1000,10],
+#                                            [3000,2000,1000,10],
+#                                            [2000,1000,10],
+#                                            [1000,10]]]
+#             p: [quniform, [0.2,0.8,0.1]]
+#             act: [choice, [nn.LeakyReLU(), nn.ReLU(), nn.Sigmoid(), None]]
+#             bn: [choice, [True,False]]
+#             lin_first: [choice, [True,False]]
+#             lr_max_arg: [choice, ['min','slice']]
+#             #RNA Dense
+#             rna_hidden_layer_sizes: [choice, [[840,680,520,360,200], 
+#                                               [800,600,400,200],
+#                                               [733,466,200],
+#                                               [600,200],
+#                                               [200]]]
+#             rna_p: [quniform, [0.2,0.8,0.1]]
+#             rna_act: [choice, [nn.LeakyReLU(), nn.ReLU(), nn.Sigmoid()]]
+#             rna_bn: [choice, [True,False]]
+#             rna_lin_first: [choice, [True,False]]
+#             #Prot Dense
+#             prot_hidden_layer_sizes: [choice, [[840,680,520,360,200], 
+#                                                [800,600,400,200],
+#                                                [733,466,200],
+#                                                [600,200],
+#                                                [200]]]
+#             prot_p: [quniform, [0.2,0.8,0.1]]
+#             prot_act: [choice, [nn.LeakyReLU(), nn.ReLU(), nn.Sigmoid()]]
+#             prot_bn: [choice, [True,False]]
+#             prot_lin_first: [choice, [True,False]]
+
+#         experiment_config:
+#             searchSpacePath: search_space/Main_Dense_search_space.json
+#             experimentName: Main_Dense
+#             trial:
+#                 command: python3 MainModel_opt.py
